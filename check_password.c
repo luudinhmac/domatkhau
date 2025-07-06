@@ -9,19 +9,13 @@
 int main(int argc, char *argv[]) {
     // Kiểm tra số lượng tham số dòng lệnh, chương trình yêu cầu 2 tham số
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <username> <listfile>\n", argv[0]);
-        return 1; // Thoát với mã lỗi nếu không đủ tham số
+        fprintf(stderr, "Cách chạy chương trình: docker run -v \"/etc:/etc\" luudinhmac/dmk <username> <listfile>\n");
+	return 1; // Thoát với mã lỗi nếu không đủ tham số
     }
 
     const char *username = argv[1];  // Tên người dùng cần kiểm tra
     const char *listfile = argv[2];  // File chứa danh sách mật khẩu cần thử
 
-    char filepath[512];              // Bộ đệm để chứa đường dẫn tuyệt đối (nếu cần)
-    if (listfile[0] != '/') {
-        // Nếu file không bắt đầu bằng '/', thêm '/' vào đầu để tạo đường dẫn tuyệt đối
-        snprintf(filepath, sizeof(filepath), "/%s", listfile);
-        listfile = filepath;
-    }
 
     FILE *fp = fopen("/etc/shadow", "r");
     // Mở file /etc/shadow để đọc hash mật khẩu của user
@@ -40,7 +34,7 @@ int main(int argc, char *argv[]) {
         if (strncmp(line, username, strlen(username)) == 0 && line[strlen(username)] == ':') {
             user_found = 1; // Đã tìm thấy user
             char *saveptr;
-            strtok_r(line, ":", &saveptr);       // Bỏ qua phần username
+            strtok_r(line, ":", &saveptr);       // Bỏ qua phần username trong dãy hash trong /etc/shadow
             hash = strtok_r(NULL, ":", &saveptr); // Lấy phần hash mật khẩu
             break; // Thoát vòng lặp khi đã tìm thấy
         }
@@ -51,12 +45,13 @@ int main(int argc, char *argv[]) {
     if (!user_found) {
         // Nếu không tìm thấy user trong /etc/shadow, thông báo và thoát
         printf("Không có người dùng %s trong hệ thống\n", username);
+	fflush(stdout); 
         return 1;
     }
 
     // In thông báo đã tìm thấy user và bắt đầu thử mật khẩu
     printf("Có người dùng %s trong hệ thống\n", username);
-
+    fflush(stdout); 
     // Kiểm tra hash có hợp lệ: phải bắt đầu bằng dấu '$'
     // (tất cả định dạng hash hiện đại như $1$, $5$, $6$ đều vậy)
     if (!hash || hash[0] != '$') {
@@ -68,23 +63,14 @@ int main(int argc, char *argv[]) {
     char salt[256];             // Bộ đệm lưu salt
     const char *p = hash;       // Con trỏ duyệt hash
     int dollar_count = 0;       // Đếm số dấu '$'
-    int i = 0;
+    int i = 0; //
     while (*p && dollar_count < 3 && i < sizeof(salt) - 1) {
         if (*p == '$') dollar_count++; // Đếm dấu $
         salt[i++] = *p++;              // Lưu từng ký tự vào salt
     }
     salt[i] = '\0'; // Kết thúc chuỗi salt
 
-    /*
-    // (Tùy chọn) In thuật toán và salt được phát hiện từ hash
-    printf("Thuật toán: %s, Salt: %s\n",
-        (strncmp(hash, "$1$", 3) == 0) ? "MD5" :
-        (strncmp(hash, "$5$", 3) == 0) ? "SHA-256" :
-        (strncmp(hash, "$6$", 3) == 0) ? "SHA-512" : "Không rõ",
-        salt);
-    */
-
-    // Mở file chứa danh sách mật khẩu cần thử
+   // Mở file chứa danh sách mật khẩu cần thử
     FILE *list = fopen(listfile, "r");
     if (!list) {
         fprintf(stderr, "Không đọc được %s\n", listfile);
@@ -92,11 +78,11 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Bắt đầu dò mật khẩu của %s đọc trong %s\n", username, listfile);
-    
+    fflush(stdout);
     char password[256]; // Bộ đệm chứa từng mật khẩu thử
-    int found = 0;      // Cờ đánh dấu đã tìm thấy mật khẩu đúng chưa
+    int found = 2;      // Cờ đánh dấu đã tìm thấy mật khẩu đúng chưa
 
-    // Đọc từng dòng trong file mật khẩu
+    //Chạy while để đọc từng dòng trong file mật khẩu
     while (fgets(password, sizeof(password), list)) {
         password[strcspn(password, "\n")] = '\0';  // Xóa ký tự xuống dòng '\n'
 
@@ -114,6 +100,6 @@ int main(int argc, char *argv[]) {
 
     fclose(list); // Đóng file danh sách mật khẩu
 
-    return found ? 0 : 1; // Trả về 0 nếu tìm thấy, 1 nếu không
+    return found ? 1 : 2; // Trả về 1 nếu tìm thấy, 2 nếu không
 }
 

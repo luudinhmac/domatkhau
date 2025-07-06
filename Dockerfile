@@ -1,5 +1,5 @@
 # Sử dụng Alpine Linux 3.20 làm base image để build (nhỏ gọn, nhanh)
-FROM alpine:3.20 AS builder
+FROM alpine:3.18 AS builder
 
 # Cài gcc và thư viện musl-dev để biên dịch chương trình C
 RUN apk add --no-cache gcc musl-dev
