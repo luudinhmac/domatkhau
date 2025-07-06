@@ -1,4 +1,4 @@
-# Sử dụng Alpine Linux 3.20 làm base image để build (nhỏ gọn, nhanh)
+# Sử dụng Alpine Linux 3.18 làm base image để build (nhỏ gọn, nhanh)
 FROM alpine:3.18 AS builder
 
 # Cài gcc và thư viện musl-dev để biên dịch chương trình C
